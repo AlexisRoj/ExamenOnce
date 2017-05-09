@@ -1,6 +1,7 @@
 package com.innovagenesis.aplicaciones.android.examenonce;
 
 import android.content.Context;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.location.Location;
 import android.os.Bundle;
@@ -19,20 +20,23 @@ import android.Manifest;
 import android.widget.Toast;
 
 import com.google.android.gms.common.ConnectionResult;
+import com.google.android.gms.common.GooglePlayServicesNotAvailableException;
+import com.google.android.gms.common.GooglePlayServicesRepairableException;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.location.LocationServices;
+import com.google.android.gms.location.places.ui.PlacePicker;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
-import com.google.android.gms.maps.GoogleMapOptions;
+import com.google.android.gms.maps.LocationSource;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
-import com.google.android.gms.maps.model.CameraPosition;
+import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
 
 public class MainActivity extends AppCompatActivity
-implements GoogleApiClient.ConnectionCallbacks,
-        GoogleApiClient.OnConnectionFailedListener, OnMapReadyCallback{
+        implements GoogleApiClient.ConnectionCallbacks,
+        GoogleApiClient.OnConnectionFailedListener, OnMapReadyCallback {
 
     private static final String[] PERMISOS = {
             Manifest.permission.ACCESS_FINE_LOCATION
@@ -51,8 +55,8 @@ implements GoogleApiClient.ConnectionCallbacks,
 
         int leer = ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION);
 
-        if (leer == PackageManager.PERMISSION_DENIED){
-            ActivityCompat.requestPermissions(this,PERMISOS, REQUEST_CODE);
+        if (leer == PackageManager.PERMISSION_DENIED) {
+            ActivityCompat.requestPermissions(this, PERMISOS, REQUEST_CODE);
         }
         super.onCreate(savedInstanceState);
 
@@ -61,20 +65,8 @@ implements GoogleApiClient.ConnectionCallbacks,
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
-        FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
-        fab.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
-                        .setAction("Action", null).show();
-            }
-        });
-
-        /* Seccion del GoogleApiClient */
-
-
-        if (googleApiClient == null){
-
+        /** Encargado de gestionar las coordenadas del GPS*/
+        if (googleApiClient == null) {
             googleApiClient = new GoogleApiClient.Builder(this)
                     .addConnectionCallbacks(this)
                     .addOnConnectionFailedListener(this)
@@ -82,9 +74,25 @@ implements GoogleApiClient.ConnectionCallbacks,
                     .build();
         }
 
+        FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
+        fab.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+
+                int PLACE_PICKER_REQUEST = 1;
+                PlacePicker.IntentBuilder builder = new PlacePicker.IntentBuilder();
+                try {
+                    startActivityForResult(builder.build(MainActivity.this), PLACE_PICKER_REQUEST);
+                } catch (GooglePlayServicesRepairableException | GooglePlayServicesNotAvailableException e) {
+                    e.printStackTrace();
+                }
+
+                Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
+                        .setAction("Action", null).show();
+            }
+        });
 
     }
-
 
 
     @Override
@@ -126,13 +134,12 @@ implements GoogleApiClient.ConnectionCallbacks,
         //Tiene que estar definido aca porque siempre los tiene que pedir
         int leer = ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION);
 
-        if (leer == PackageManager.PERMISSION_DENIED){
-            ActivityCompat.requestPermissions(this,PERMISOS, REQUEST_CODE);
+        if (leer == PackageManager.PERMISSION_DENIED) {
+            ActivityCompat.requestPermissions(this, PERMISOS, REQUEST_CODE);
         }
 
         location = LocationServices.FusedLocationApi.getLastLocation(googleApiClient);
-
-        if (location != null){
+        if (location != null) {
 
             latitud = location.getLatitude();
             longitud = location.getLongitude();
@@ -140,7 +147,7 @@ implements GoogleApiClient.ConnectionCallbacks,
             Toast.makeText(this, "Latitud: " + latitud + "Logitud: " + longitud, Toast.LENGTH_SHORT).show();
 
             /** Instancia el fragment despues del connect para asignar los marcadores */
-            SupportMapFragment mapFragment =(SupportMapFragment) getSupportFragmentManager()
+            SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
                     .findFragmentById(R.id.map);
             mapFragment.getMapAsync(this);
         }
@@ -158,18 +165,26 @@ implements GoogleApiClient.ConnectionCallbacks,
 
     @Override
     public void onMapReady(GoogleMap googleMap) {
-
-        final LatLng CIUDAD = new LatLng(latitud,longitud);
-
+        final LatLng CIUDAD = new LatLng(latitud, longitud);
         googleMap.addMarker(new MarkerOptions()
-        .title("Esta es su posicion")
-        .position(CIUDAD));
+                .title("Esta es su posicion")
+                .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE))
+                .snippet("Latitud: " + latitud + " Longitud: " + longitud)
+                .position(CIUDAD));
 
-        googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(CIUDAD,16));
+        googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(CIUDAD, 16));
 
         Toast.makeText(this, "Latitud: " + latitud + "Logitud: " + longitud, Toast.LENGTH_SHORT).show();
+    }
 
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
 
 
     }
+
+
+
+
 }
