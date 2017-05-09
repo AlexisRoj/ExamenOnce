@@ -1,8 +1,8 @@
 package com.innovagenesis.aplicaciones.android.examenonce;
 
-import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.graphics.Color;
 import android.location.Location;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
@@ -12,7 +12,6 @@ import android.support.design.widget.Snackbar;
 import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
-import android.util.AttributeSet;
 import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -29,17 +28,17 @@ import com.google.android.gms.location.places.Place;
 import com.google.android.gms.location.places.ui.PlacePicker;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
-import com.google.android.gms.maps.LocationSource;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.android.gms.maps.model.PolylineOptions;
 
 public class MainActivity extends AppCompatActivity
         implements GoogleApiClient.ConnectionCallbacks,
-        GoogleApiClient.OnConnectionFailedListener, OnMapReadyCallback, LocationListener {
+        GoogleApiClient.OnConnectionFailedListener, OnMapReadyCallback {
 
     private static final String[] PERMISOS = {
             Manifest.permission.ACCESS_FINE_LOCATION
@@ -48,12 +47,14 @@ public class MainActivity extends AppCompatActivity
     public static final int PLACE_PICKER_REQUEST = 1;
     private static int REQUEST_CODE = 1;
     private GoogleApiClient googleApiClient;
-    private Location location;
 
     private double latitud;
     private double longitud;
 
-    GoogleMap googleMaps;
+    private LatLng ultimasCoordenadas;
+    private Place place;
+
+    private GoogleMap googleMaps;
 
 
     @Override
@@ -144,11 +145,14 @@ public class MainActivity extends AppCompatActivity
             ActivityCompat.requestPermissions(this, PERMISOS, REQUEST_CODE);
         }
 
-        location = LocationServices.FusedLocationApi.getLastLocation(googleApiClient);
+        Location location = LocationServices.FusedLocationApi.getLastLocation(googleApiClient);
         if (location != null) {
 
             latitud = location.getLatitude();
             longitud = location.getLongitude();
+
+            ultimasCoordenadas = new LatLng(latitud, longitud);
+
 
             Toast.makeText(this, "Latitud: " + latitud + "Logitud: " + longitud, Toast.LENGTH_SHORT).show();
 
@@ -181,7 +185,20 @@ public class MainActivity extends AppCompatActivity
 
         googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(CIUDAD, 16));
 
+        //Inicializa googleMaps para utilizarlo en el onActivityResult
         googleMaps = googleMap;
+
+        googleMap.setOnMapLongClickListener(new GoogleMap.OnMapLongClickListener() {
+
+            /**
+             * Encargado de crear los marcadores si se hace una presion larga
+             * */
+            @Override
+            public void onMapLongClick(LatLng latLng) {
+                mCrearMarcadores(place, latLng); // metodo que  crean los marcadores
+                ultimasCoordenadas = latLng;
+            }
+        });
 
 
         Toast.makeText(this, "Latitud: " + latitud + "Logitud: " + longitud, Toast.LENGTH_SHORT).show();
@@ -193,32 +210,56 @@ public class MainActivity extends AppCompatActivity
 
         if (requestCode == PLACE_PICKER_REQUEST)
             if (resultCode == RESULT_OK) {
-                Place place = PlacePicker.getPlace(this, data);
+                place = PlacePicker.getPlace(this, data);
 
                 LatLng coordenadas = (place.getLatLng());
-
-
-
-                googleMaps.addMarker(new MarkerOptions()
-                        .title(place.getName().toString())
-                        .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE))
-                        .snippet("Latitud: " + latitud + " Longitud: " + longitud)
-                        .position(coordenadas));
-
-
+                mCrearMarcadores(place, coordenadas); //se crean los marcadores
+                ultimasCoordenadas = coordenadas;
 
                 Toast.makeText(this, "la ubicacion es: " + place.getLatLng(), Toast.LENGTH_LONG).show();
-
             }
-
-
     }
 
+    /**
+     * Método encargado de asignar los marcadores y las polineas en el map
+     */
+    private void mCrearMarcadores(Place place, LatLng coordenadas) {
+        /*
+         *  Creacion de marcadores
+         *  valida para poner nombre en los marcadores
+         *  */
+        if (place == null)
+            mCrearMarca(place, coordenadas, true);
+        else
+            mCrearMarca(place, coordenadas, false);
+       /*
+        *  uso de polilineas
+        *  */
+        PolylineOptions polylineOptions = new PolylineOptions()
+                .add(ultimasCoordenadas)
+                .add(coordenadas)
+                .color(Color.RED);
 
-    @Override
-    public void onLocationChanged(Location location) {
-
-
-
+        googleMaps.addPolyline(polylineOptions);
     }
+
+    /**
+     * Define los atributos de los marcadores
+     */
+    private void mCrearMarca(Place place, LatLng coordenadas, Boolean nulo) {
+        if (nulo) {
+            googleMaps.addMarker(new MarkerOptions()
+                    .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE))
+                    .snippet("Latitud: " + latitud + " Longitud: " + longitud)
+                    .position(coordenadas));
+
+        } else {
+            googleMaps.addMarker(new MarkerOptions()
+                    .title(place.getName().toString())
+                    .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE))
+                    .snippet("Latitud: " + latitud + " Longitud: " + longitud)
+                    .position(coordenadas));
+        }
+    }
+
 }
