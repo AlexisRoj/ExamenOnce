@@ -1,8 +1,14 @@
 package com.innovagenesis.aplicaciones.android.examenonce;
 
+import android.app.AlertDialog;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
+import android.hardware.Sensor;
+import android.hardware.SensorEvent;
+import android.hardware.SensorEventListener;
+import android.hardware.SensorManager;
 import android.location.Location;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
@@ -22,7 +28,6 @@ import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GooglePlayServicesNotAvailableException;
 import com.google.android.gms.common.GooglePlayServicesRepairableException;
 import com.google.android.gms.common.api.GoogleApiClient;
-import com.google.android.gms.location.LocationListener;
 import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.location.places.Place;
 import com.google.android.gms.location.places.ui.PlacePicker;
@@ -32,13 +37,15 @@ import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
-import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.maps.model.PolylineOptions;
 
+import java.text.DecimalFormat;
+import java.text.NumberFormat;
+
 public class MainActivity extends AppCompatActivity
         implements GoogleApiClient.ConnectionCallbacks,
-        GoogleApiClient.OnConnectionFailedListener, OnMapReadyCallback {
+        GoogleApiClient.OnConnectionFailedListener, OnMapReadyCallback, SensorEventListener {
 
     private static final String[] PERMISOS = {
             Manifest.permission.ACCESS_FINE_LOCATION
@@ -55,6 +62,10 @@ public class MainActivity extends AppCompatActivity
     private Place place;
 
     private GoogleMap googleMaps;
+
+    private SensorManager sensorManager;
+
+    String valor;
 
 
     @Override
@@ -93,11 +104,14 @@ public class MainActivity extends AppCompatActivity
                 } catch (GooglePlayServicesRepairableException | GooglePlayServicesNotAvailableException e) {
                     e.printStackTrace();
                 }
-
-                Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
-                        .setAction("Action", null).show();
             }
         });
+
+        sensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
+        sensorManager.registerListener(this, sensorManager
+                        .getDefaultSensor(Sensor.TYPE_AMBIENT_TEMPERATURE),
+                SensorManager.SENSOR_DELAY_NORMAL);
+
 
     }
 
@@ -130,7 +144,21 @@ public class MainActivity extends AppCompatActivity
 
         //noinspection SimplifiableIfStatement
         if (id == R.id.action_settings) {
-            return true;
+
+            sensorManager.registerListener(this, sensorManager
+                            .getDefaultSensor(Sensor.TYPE_AMBIENT_TEMPERATURE),
+                    SensorManager.SENSOR_DELAY_NORMAL);
+
+            AlertDialog.Builder dialogo = new AlertDialog.Builder(this);
+            dialogo.setTitle("La temperatura acual es: ");
+            dialogo.setMessage(valor);
+            dialogo.setPositiveButton("Ok", new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+                    dialog.dismiss();
+                }
+            });
+            dialogo.create().show();
         }
 
         return super.onOptionsItemSelected(item);
@@ -173,6 +201,9 @@ public class MainActivity extends AppCompatActivity
 
     }
 
+    /**
+     * Gestiona todos los eventos de incio de mapa
+     * */
     @Override
     public void onMapReady(GoogleMap googleMap) {
         final LatLng CIUDAD = new LatLng(latitud, longitud);
@@ -262,4 +293,20 @@ public class MainActivity extends AppCompatActivity
         }
     }
 
+    /**
+     * Método encargado de mostrar la temperatura ambiente
+     * */
+    @Override
+    public void onSensorChanged(SensorEvent sensorEvent) {
+        valor="";
+        NumberFormat numberFormat = new DecimalFormat("#0.00");
+        valor += "\n"+numberFormat.format(sensorEvent.values[0]) + " °C";
+        valor += "\n"+numberFormat.format((9*(sensorEvent.values[0])/5)+32) +" °F";
+        valor += "\n"+numberFormat.format((sensorEvent.values[0])+273.15) +" °K";
+    }
+
+    @Override
+    public void onAccuracyChanged(Sensor sensor, int accuracy) {
+
+    }
 }
