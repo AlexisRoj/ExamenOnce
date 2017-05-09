@@ -23,7 +23,9 @@ import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GooglePlayServicesNotAvailableException;
 import com.google.android.gms.common.GooglePlayServicesRepairableException;
 import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.location.LocationListener;
 import com.google.android.gms.location.LocationServices;
+import com.google.android.gms.location.places.Place;
 import com.google.android.gms.location.places.ui.PlacePicker;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
@@ -32,22 +34,26 @@ import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 
 public class MainActivity extends AppCompatActivity
         implements GoogleApiClient.ConnectionCallbacks,
-        GoogleApiClient.OnConnectionFailedListener, OnMapReadyCallback {
+        GoogleApiClient.OnConnectionFailedListener, OnMapReadyCallback, LocationListener {
 
     private static final String[] PERMISOS = {
             Manifest.permission.ACCESS_FINE_LOCATION
     };
 
+    public static final int PLACE_PICKER_REQUEST = 1;
     private static int REQUEST_CODE = 1;
     private GoogleApiClient googleApiClient;
     private Location location;
 
     private double latitud;
     private double longitud;
+
+    GoogleMap googleMaps;
 
 
     @Override
@@ -166,6 +172,7 @@ public class MainActivity extends AppCompatActivity
     @Override
     public void onMapReady(GoogleMap googleMap) {
         final LatLng CIUDAD = new LatLng(latitud, longitud);
+
         googleMap.addMarker(new MarkerOptions()
                 .title("Esta es su posicion")
                 .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE))
@@ -174,6 +181,9 @@ public class MainActivity extends AppCompatActivity
 
         googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(CIUDAD, 16));
 
+        googleMaps = googleMap;
+
+
         Toast.makeText(this, "Latitud: " + latitud + "Logitud: " + longitud, Toast.LENGTH_SHORT).show();
     }
 
@@ -181,10 +191,34 @@ public class MainActivity extends AppCompatActivity
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
 
+        if (requestCode == PLACE_PICKER_REQUEST)
+            if (resultCode == RESULT_OK) {
+                Place place = PlacePicker.getPlace(this, data);
+
+                LatLng coordenadas = (place.getLatLng());
+
+
+
+                googleMaps.addMarker(new MarkerOptions()
+                        .title(place.getName().toString())
+                        .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE))
+                        .snippet("Latitud: " + latitud + " Longitud: " + longitud)
+                        .position(coordenadas));
+
+
+
+                Toast.makeText(this, "la ubicacion es: " + place.getLatLng(), Toast.LENGTH_LONG).show();
+
+            }
+
 
     }
 
 
+    @Override
+    public void onLocationChanged(Location location) {
 
 
+
+    }
 }
