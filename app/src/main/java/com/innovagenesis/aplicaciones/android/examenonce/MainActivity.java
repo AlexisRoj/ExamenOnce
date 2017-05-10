@@ -112,7 +112,6 @@ public class MainActivity extends AppCompatActivity
                         .getDefaultSensor(Sensor.TYPE_AMBIENT_TEMPERATURE),
                 SensorManager.SENSOR_DELAY_NORMAL);
 
-
     }
 
 
@@ -285,14 +284,14 @@ public class MainActivity extends AppCompatActivity
     private void mCrearMarca(Place place, LatLng coordenadas, Boolean nulo) {
         if (nulo) {
             googleMaps.addMarker(new MarkerOptions()
-                    .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE))
+                    .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_VIOLET))
                     .snippet("Latitud: " + latitud + " Longitud: " + longitud)
                     .position(coordenadas));
 
         } else {
             googleMaps.addMarker(new MarkerOptions()
                     .title(place.getName().toString())
-                    .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE))
+                    .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_MAGENTA))
                     .snippet("Latitud: " + latitud + " Longitud: " + longitud)
                     .position(coordenadas));
         }
