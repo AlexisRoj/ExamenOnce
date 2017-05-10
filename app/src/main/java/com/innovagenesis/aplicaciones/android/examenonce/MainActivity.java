@@ -149,16 +149,21 @@ public class MainActivity extends AppCompatActivity
                             .getDefaultSensor(Sensor.TYPE_AMBIENT_TEMPERATURE),
                     SensorManager.SENSOR_DELAY_NORMAL);
 
-            AlertDialog.Builder dialogo = new AlertDialog.Builder(this);
-            dialogo.setTitle("La temperatura acual es: ");
-            dialogo.setMessage(valor);
-            dialogo.setPositiveButton("Ok", new DialogInterface.OnClickListener() {
-                @Override
-                public void onClick(DialogInterface dialog, int which) {
-                    dialog.dismiss();
-                }
-            });
-            dialogo.create().show();
+            if (sensorManager != null){
+
+                AlertDialog.Builder dialogo = new AlertDialog.Builder(this);
+                dialogo.setTitle("La temperatura acual es: ");
+                dialogo.setMessage(valor);
+                dialogo.setPositiveButton("Ok", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        dialog.dismiss();
+                    }
+                });
+                dialogo.create().show();
+
+            }else
+                Toast.makeText(this, "No tiene sensor el dispositivo ", Toast.LENGTH_SHORT).show();
         }
 
         return super.onOptionsItemSelected(item);
